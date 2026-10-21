@@ -1,0 +1,74 @@
+# ============================================================================
+# CONFIGURACIÓN DEL API GATEWAY
+# Responsabilidades de este archivo: puerto, CORS, rutas y conexión a Eureka.
+# ============================================================================
+server:
+  port: 8080                              # puerto de entrada único del sistema
+
+spring:
+  application:
+    name: GATEWAY                         # nombre con el que se registra en Eureka
+  cloud:
+    gateway:
+      server:
+        webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':                    # CORS aplica a todas las rutas
+                allowedOrigins:           # navegadores que pueden llamar al Gateway
+                  - ${FRONTEND_URL:http://localhost:4200}
+                  - ${FRONTEND_URL_VITE:http://localhost:5173}
+                  - ${FRONTEND_URL_NEXT:http://localhost:3000}
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - '*'
+                allowCredentials: true
+          # ROUTES: cada ruta dice QUÉ path se reenvía y A DÓNDE.
+          # lb://NOMBRE = buscar el servicio NOMBRE en Eureka y balancear la carga.
+          routes:
+            # Autenticación y usuarios -> AUTH-SERVICE
+            - id: AUTH-SERVICE
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/auth/**,/usuarios/**
+            # Catálogo (REST)
+            - id: MICRO-CATALOGO
+              uri: lb://MICRO-CATALOGO
+              predicates:
+                - Path=/catalogo/**
+            # Reservas (REST)
+            - id: MICRO-RESERVAS
+              uri: lb://MICRO-RESERVAS
+              predicates:
+                - Path=/reservas/**
+            # Carrito (REST)
+            - id: MICRO-CARRITO
+              uri: lb://MICRO-CARRITO
+              predicates:
+                - Path=/carrito/**
+            # Servicio SOAP
+            - id: MICRO-SOAP
+              uri: lb://MICRO-SOAP
+              predicates:
+                - Path=/ws/**
+
+# Conexión con Eureka: el Gateway se registra y consulta la lista de servicios.
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    fetch-registry: true                  # descarga la lista de servicios
+    register-with-eureka: true            # se anuncia en Eureka
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+
+# El mismo secreto y expiración que AUTH-SERVICE, para validar el JWT en el filtro global.
+jwt:
+  secret: ${JWT_SECRET:/urSDUIrV3z7QBnshgjDKBw7+MgBEYIki+/z42yAm/E=}
+  expiration: ${JWT_EXPIRATION:3600000}

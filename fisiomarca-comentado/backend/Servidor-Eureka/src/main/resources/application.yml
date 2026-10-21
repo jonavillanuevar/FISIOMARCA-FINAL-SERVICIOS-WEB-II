@@ -1,0 +1,21 @@
+# ============================================================================
+# CONFIGURACIÓN DE EUREKA
+# ============================================================================
+spring:
+  application:
+    name: SERVIDOR-EUREKA       # nombre de ESTA aplicación (el propio servidor)
+
+server:
+  port: 8761                    # puerto del panel y de la API de Eureka
+
+eureka:
+  instance:
+    hostname: localhost         # nombre con que se anuncia el propio servidor
+  client:
+    # El servidor no se registra en sí mismo ni descarga su propio registro.
+    fetch-registry: false
+    register-with-eureka: false
+    service-url:
+      # Dirección de Eureka para los clientes. Los servicios la reciben por
+      # la variable EUREKA_URL cuando corren en Docker.
+      defaultZone: http://localhost:8761/eureka
